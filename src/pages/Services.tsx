@@ -3,117 +3,43 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Star, MapPin, CheckCircle, Filter } from "lucide-react";
+import { Star, MapPin, CheckCircle, Filter, Loader2 } from "lucide-react";
+import { useServices } from "@/hooks/useServices";
+import { useServiceCategories } from "@/hooks/useServiceCategories";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthModal } from "@/components/AuthModal";
 
 const Services = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [priceRange, setPriceRange] = useState("all");
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  const { data: services = [], isLoading: servicesLoading } = useServices();
+  const { data: categories = [] } = useServiceCategories();
+  const { user } = useAuth();
 
-  const providers = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      service: "House Cleaning",
-      category: "cleaning",
-      rating: 4.9,
-      reviews: 127,
-      price: 25,
-      location: "Downtown",
-      image: "SJ",
-      verified: true,
-      description: "Professional house cleaning with eco-friendly products"
-    },
-    {
-      id: 2,
-      name: "Mike Rodriguez",
-      service: "Handyman Services",
-      category: "handyman",
-      rating: 4.8,
-      reviews: 89,
-      price: 35,
-      location: "Westside",
-      image: "MR",
-      verified: true,
-      description: "General repairs, installations, and home maintenance"
-    },
-    {
-      id: 3,
-      name: "Emily Chen",
-      service: "Math Tutoring",
-      category: "tutoring",
-      rating: 5.0,
-      reviews: 67,
-      price: 40,
-      location: "University District",
-      image: "EC",
-      verified: true,
-      description: "High school and college level mathematics tutoring"
-    },
-    {
-      id: 4,
-      name: "David Kim",
-      service: "Pet Sitting",
-      category: "petcare",
-      rating: 4.7,
-      reviews: 93,
-      price: 20,
-      location: "Midtown",
-      image: "DK",
-      verified: true,
-      description: "Reliable pet sitting and dog walking services"
-    },
-    {
-      id: 5,
-      name: "Lisa Thompson",
-      service: "Garden Design",
-      category: "landscaping",
-      rating: 4.9,
-      reviews: 45,
-      price: 50,
-      location: "Suburbs",
-      image: "LT",
-      verified: true,
-      description: "Custom garden design and landscaping solutions"
-    },
-    {
-      id: 6,
-      name: "James Wilson",
-      service: "Photography",
-      category: "photography",
-      rating: 4.8,
-      reviews: 78,
-      price: 75,
-      location: "Arts District",
-      image: "JW",
-      verified: true,
-      description: "Professional photography for events and portraits"
-    }
-  ];
-
-  const categories = [
-    { value: "all", label: "All Categories" },
-    { value: "cleaning", label: "Cleaning" },
-    { value: "handyman", label: "Handyman" },
-    { value: "tutoring", label: "Tutoring" },
-    { value: "petcare", label: "Pet Care" },
-    { value: "landscaping", label: "Landscaping" },
-    { value: "photography", label: "Photography" }
-  ];
-
-  const filteredProviders = providers.filter(provider => {
-    const matchesSearch = provider.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         provider.service.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || provider.category === selectedCategory;
+  const filteredServices = services.filter(service => {
+    const matchesSearch = service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         service.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         service.profiles.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "all" || service.service_categories.name === selectedCategory;
     const matchesPrice = priceRange === "all" || 
-                        (priceRange === "low" && provider.price < 30) ||
-                        (priceRange === "medium" && provider.price >= 30 && provider.price < 50) ||
-                        (priceRange === "high" && provider.price >= 50);
+                        (priceRange === "low" && service.price_per_hour < 30) ||
+                        (priceRange === "medium" && service.price_per_hour >= 30 && service.price_per_hour < 50) ||
+                        (priceRange === "high" && service.price_per_hour >= 50);
     
     return matchesSearch && matchesCategory && matchesPrice;
   });
+
+  const handleContactProvider = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    // Logic to start conversation with provider
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -130,7 +56,13 @@ const Services = () => {
             <nav className="hidden md:flex items-center space-x-6">
               <a href="/" className="text-gray-600 hover:text-blue-600 transition-colors">Home</a>
               <a href="/become-provider" className="text-gray-600 hover:text-blue-600 transition-colors">Become a Provider</a>
-              <a href="/login" className="text-gray-600 hover:text-blue-600 transition-colors">Sign In</a>
+              {user ? (
+                <a href="/messages" className="text-gray-600 hover:text-blue-600 transition-colors">Messages</a>
+              ) : (
+                <Button onClick={() => setShowAuthModal(true)} variant="ghost">
+                  Sign In
+                </Button>
+              )}
               <Button className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700">
                 Get Started
               </Button>
@@ -156,9 +88,10 @@ const Services = () => {
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories.map(category => (
-                  <SelectItem key={category.value} value={category.value}>
-                    {category.label}
+                  <SelectItem key={category.id} value={category.name}>
+                    {category.icon} {category.description}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -180,7 +113,7 @@ const Services = () => {
         {/* Results Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-800">
-            Service Providers ({filteredProviders.length})
+            Service Providers ({filteredServices.length})
           </h1>
           <div className="flex items-center space-x-2 text-gray-600">
             <Filter className="w-4 h-4" />
@@ -188,47 +121,55 @@ const Services = () => {
           </div>
         </div>
 
+        {/* Loading State */}
+        {servicesLoading && (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          </div>
+        )}
+
         {/* Provider Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProviders.map((provider) => (
-            <Card key={provider.id} className="hover:shadow-lg transition-all duration-300 cursor-pointer">
+          {filteredServices.map((service) => (
+            <Card key={service.id} className="hover:shadow-lg transition-all duration-300 cursor-pointer">
               <CardContent className="p-6">
                 <div className="flex items-center mb-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-teal-600 rounded-full flex items-center justify-center text-white font-semibold mr-4">
-                    {provider.image}
+                    {service.profiles.full_name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
-                      <h3 className="font-semibold text-gray-800">{provider.name}</h3>
-                      {provider.verified && (
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                      )}
+                      <h3 className="font-semibold text-gray-800">{service.profiles.full_name}</h3>
+                      <CheckCircle className="w-4 h-4 text-green-500" />
                     </div>
-                    <p className="text-sm text-gray-600">{provider.service}</p>
+                    <p className="text-sm text-gray-600">{service.title}</p>
                   </div>
                 </div>
                 
-                <p className="text-gray-600 text-sm mb-4">{provider.description}</p>
+                <p className="text-gray-600 text-sm mb-4">{service.description}</p>
                 
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-1">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">{provider.rating}</span>
-                    <span className="text-sm text-gray-600">({provider.reviews})</span>
+                    <span className="font-medium">4.8</span>
+                    <span className="text-sm text-gray-600">(25)</span>
                   </div>
-                  <span className="font-semibold text-blue-600">${provider.price}/hour</span>
+                  <span className="font-semibold text-blue-600">${service.price_per_hour}/hour</span>
                 </div>
                 
                 <div className="flex items-center text-gray-500 text-sm mb-4">
                   <MapPin className="w-4 h-4 mr-1" />
-                  {provider.location}
+                  {service.location || service.profiles.location || 'Location not specified'}
                 </div>
                 
                 <div className="flex space-x-2">
                   <Button variant="outline" className="flex-1">
                     View Profile
                   </Button>
-                  <Button className="flex-1 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700">
+                  <Button 
+                    className="flex-1 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700"
+                    onClick={handleContactProvider}
+                  >
                     Contact
                   </Button>
                 </div>
@@ -237,7 +178,7 @@ const Services = () => {
           ))}
         </div>
 
-        {filteredProviders.length === 0 && (
+        {filteredServices.length === 0 && !servicesLoading && (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
               <Filter className="w-16 h-16 mx-auto" />
@@ -247,6 +188,8 @@ const Services = () => {
           </div>
         )}
       </div>
+
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   );
 };

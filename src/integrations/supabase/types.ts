@@ -9,7 +9,332 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      conversations: {
+        Row: {
+          created_at: string | null
+          customer_id: string
+          id: string
+          last_message: string | null
+          last_message_at: string | null
+          provider_id: string
+          service_request_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id: string
+          id?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          provider_id: string
+          service_request_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string
+          id?: string
+          last_message?: string | null
+          last_message_at?: string | null
+          provider_id?: string
+          service_request_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          message_type: string | null
+          read_at: string | null
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          message_type?: string | null
+          read_at?: string | null
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          message_type?: string | null
+          read_at?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          location: string | null
+          phone: string | null
+          updated_at: string | null
+          user_type: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          location?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          user_type?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          location?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          user_type?: string | null
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          rating: number
+          reviewee_id: string
+          reviewer_id: string
+          service_request_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating: number
+          reviewee_id: string
+          reviewer_id: string
+          service_request_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number
+          reviewee_id?: string
+          reviewer_id?: string
+          service_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_reviewee_id_fkey"
+            columns: ["reviewee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_service_request_id_fkey"
+            columns: ["service_request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      service_requests: {
+        Row: {
+          budget_range: string | null
+          created_at: string | null
+          customer_id: string
+          description: string
+          id: string
+          location: string
+          preferred_date: string | null
+          service_id: string | null
+          status: string | null
+          time_preference: string | null
+          title: string
+          updated_at: string | null
+          urgency: string | null
+        }
+        Insert: {
+          budget_range?: string | null
+          created_at?: string | null
+          customer_id: string
+          description: string
+          id?: string
+          location: string
+          preferred_date?: string | null
+          service_id?: string | null
+          status?: string | null
+          time_preference?: string | null
+          title: string
+          updated_at?: string | null
+          urgency?: string | null
+        }
+        Update: {
+          budget_range?: string | null
+          created_at?: string | null
+          customer_id?: string
+          description?: string
+          id?: string
+          location?: string
+          preferred_date?: string | null
+          service_id?: string | null
+          status?: string | null
+          time_preference?: string | null
+          title?: string
+          updated_at?: string | null
+          urgency?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_requests_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          description: string
+          id: string
+          location: string | null
+          price_per_hour: number | null
+          provider_id: string
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          location?: string | null
+          price_per_hour?: number | null
+          provider_id: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          location?: string | null
+          price_per_hour?: number | null
+          provider_id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

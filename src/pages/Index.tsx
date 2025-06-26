@@ -1,53 +1,29 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Star, MapPin, Users, CheckCircle, ArrowRight, Search } from "lucide-react";
+import { Star, MapPin, CheckCircle, ArrowRight, Search } from "lucide-react";
+import { useServiceCategories } from "@/hooks/useServiceCategories";
+import { useServices } from "@/hooks/useServices";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthModal } from "@/components/AuthModal";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  const { data: categories = [] } = useServiceCategories();
+  const { data: services = [] } = useServices();
+  const { user, signOut } = useAuth();
 
-  const serviceCategories = [
-    { name: "Home Cleaning", icon: "🏠", providers: 45, avgRating: 4.8 },
-    { name: "Tutoring", icon: "📚", providers: 32, avgRating: 4.9 },
-    { name: "Handyman", icon: "🔧", providers: 28, avgRating: 4.7 },
-    { name: "Pet Care", icon: "🐕", providers: 21, avgRating: 4.8 },
-    { name: "Landscaping", icon: "🌿", providers: 19, avgRating: 4.6 },
-    { name: "Photography", icon: "📸", providers: 15, avgRating: 4.9 }
-  ];
+  // Take first 6 categories and 3 services for featured sections
+  const featuredCategories = categories.slice(0, 6);
+  const featuredServices = services.slice(0, 3);
 
-  const featuredProviders = [
-    {
-      name: "Sarah Johnson",
-      service: "House Cleaning",
-      rating: 4.9,
-      reviews: 127,
-      price: "$25/hour",
-      image: "SJ",
-      verified: true
-    },
-    {
-      name: "Mike Rodriguez",
-      service: "Handyman Services",
-      rating: 4.8,
-      reviews: 89,
-      price: "$35/hour",
-      image: "MR",
-      verified: true
-    },
-    {
-      name: "Emily Chen",
-      service: "Math Tutoring",
-      rating: 5.0,
-      reviews: 67,
-      price: "$40/hour",
-      image: "EC",
-      verified: true
-    }
-  ];
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50">
@@ -64,7 +40,16 @@ const Index = () => {
             <nav className="hidden md:flex items-center space-x-6">
               <Link to="/services" className="text-gray-600 hover:text-blue-600 transition-colors">Browse Services</Link>
               <Link to="/become-provider" className="text-gray-600 hover:text-blue-600 transition-colors">Become a Provider</Link>
-              <Link to="/login" className="text-gray-600 hover:text-blue-600 transition-colors">Sign In</Link>
+              {user ? (
+                <div className="flex items-center space-x-4">
+                  <Link to="/messages" className="text-gray-600 hover:text-blue-600 transition-colors">Messages</Link>
+                  <Button variant="ghost" onClick={handleSignOut}>Sign Out</Button>
+                </div>
+              ) : (
+                <Button onClick={() => setShowAuthModal(true)} variant="ghost">
+                  Sign In
+                </Button>
+              )}
               <Button className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700">
                 Get Started
               </Button>
@@ -94,17 +79,19 @@ const Index = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pr-12 h-14 text-lg border-2 border-blue-200 focus:border-blue-500"
             />
-            <Button className="absolute right-2 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700">
-              <Search className="w-5 h-5" />
-            </Button>
+            <Link to={`/services${searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : ''}`}>
+              <Button className="absolute right-2 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700">
+                <Search className="w-5 h-5" />
+              </Button>
+            </Link>
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
           <div className="text-center">
-            <div className="text-3xl font-bold text-blue-600 mb-2">500+</div>
-            <div className="text-gray-600">Verified Providers</div>
+            <div className="text-3xl font-bold text-blue-600 mb-2">{services.length}+</div>
+            <div className="text-gray-600">Active Services</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-teal-600 mb-2">10,000+</div>
@@ -121,25 +108,24 @@ const Index = () => {
       <section className="container mx-auto px-4 py-16">
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">Popular Services</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {serviceCategories.map((category, index) => (
-            <Card key={index} className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-4xl">{category.icon}</span>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                    {category.providers} providers
-                  </Badge>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-2">{category.name}</h3>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-1">
-                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm text-gray-600">{category.avgRating}</span>
+          {featuredCategories.map((category) => (
+            <Link to={`/services?category=${category.name}`} key={category.id}>
+              <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-4xl">{category.icon}</span>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                </div>
-              </CardContent>
-            </Card>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">{category.description}</h3>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-1">
+                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm text-gray-600">4.8</span>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       </section>
@@ -149,30 +135,28 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">Featured Providers</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {featuredProviders.map((provider, index) => (
-              <Card key={index} className="hover:shadow-lg transition-all duration-300">
+            {featuredServices.map((service) => (
+              <Card key={service.id} className="hover:shadow-lg transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-teal-600 rounded-full flex items-center justify-center text-white font-semibold mr-4">
-                      {provider.image}
+                      {service.profiles.full_name.split(' ').map(n => n[0]).join('')}
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <h3 className="font-semibold text-gray-800">{provider.name}</h3>
-                        {provider.verified && (
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                        )}
+                        <h3 className="font-semibold text-gray-800">{service.profiles.full_name}</h3>
+                        <CheckCircle className="w-4 h-4 text-green-500" />
                       </div>
-                      <p className="text-sm text-gray-600">{provider.service}</p>
+                      <p className="text-sm text-gray-600">{service.title}</p>
                     </div>
                   </div>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">{provider.rating}</span>
-                      <span className="text-sm text-gray-600">({provider.reviews} reviews)</span>
+                      <span className="font-medium">4.8</span>
+                      <span className="text-sm text-gray-600">(25 reviews)</span>
                     </div>
-                    <span className="font-semibold text-blue-600">{provider.price}</span>
+                    <span className="font-semibold text-blue-600">${service.price_per_hour}/hour</span>
                   </div>
                   <Button className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700">
                     View Profile
@@ -274,6 +258,8 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   );
 };
