@@ -1,9 +1,10 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Star, MapPin, CheckCircle, ArrowRight, Search } from "lucide-react";
+import { Star, MapPin, CheckCircle, ArrowRight, Search, Users } from "lucide-react";
 import { useServiceCategories } from "@/hooks/useServiceCategories";
 import { useServices } from "@/hooks/useServices";
 import { useAuth } from "@/hooks/useAuth";
