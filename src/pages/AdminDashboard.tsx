@@ -1,111 +1,111 @@
 
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Users, 
   UserCheck, 
-  UserX, 
   TrendingUp, 
   DollarSign, 
   Star,
-  Eye,
-  Edit,
-  Trash2,
   CheckCircle,
   XCircle,
-  BarChart3
+  Clock,
+  Eye,
+  LogOut,
+  Shield,
+  Loader2,
+  AlertCircle
 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useProviderApplications } from "@/hooks/useProviderApplications";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("applications");
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [selectedApplication, setSelectedApplication] = useState<string | null>(null);
 
-  // Sample analytics data
-  const monthlyData = [
-    { month: "Jan", users: 120, bookings: 45, revenue: 2400 },
-    { month: "Feb", users: 150, bookings: 67, revenue: 3200 },
-    { month: "Mar", users: 180, bookings: 89, revenue: 4100 },
-    { month: "Apr", users: 220, bookings: 112, revenue: 5200 },
-    { month: "May", users: 280, bookings: 134, revenue: 6800 },
-    { month: "Jun", users: 340, bookings: 156, revenue: 8200 }
-  ];
+  const { adminProfile, isAdmin, loading, signOut } = useAdminAuth();
+  const { applications, isLoading, approveApplication, rejectApplication } = useProviderApplications();
+  const { toast } = useToast();
 
-  const serviceData = [
-    { service: "Cleaning", bookings: 45, revenue: 2250 },
-    { service: "Handyman", bookings: 38, revenue: 3040 },
-    { service: "Tutoring", bookings: 29, revenue: 2320 },
-    { service: "Pet Care", bookings: 22, revenue: 1320 },
-    { service: "Landscaping", bookings: 15, revenue: 1875 },
-    { service: "Photography", bookings: 12, revenue: 1800 }
-  ];
+  // Redirect if not admin
+  if (!loading && !isAdmin) {
+    return <Navigate to="/admin/login" replace />;
+  }
 
-  // Sample provider applications
-  const pendingProviders = [
-    {
-      id: 1,
-      name: "John Smith",
-      service: "Plumbing",
-      email: "john@example.com",
-      phone: "(555) 123-4567",
-      experience: "5 years",
-      rating: null,
-      status: "pending"
-    },
-    {
-      id: 2,
-      name: "Maria Garcia",
-      service: "House Cleaning",
-      email: "maria@example.com",
-      phone: "(555) 987-6543",
-      experience: "3 years",
-      rating: null,
-      status: "pending"
-    },
-    {
-      id: 3,
-      name: "Robert Lee",
-      service: "Tutoring",
-      email: "robert@example.com",
-      phone: "(555) 456-7890",
-      experience: "7 years",
-      rating: null,
-      status: "pending"
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed Out",
+      description: "You have been signed out of the admin panel.",
+    });
+  };
+
+  const handleApprove = async (applicationId: string) => {
+    try {
+      await approveApplication.mutateAsync(applicationId);
+      toast({
+        title: "Application Approved",
+        description: "The provider application has been approved successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to approve the application. Please try again.",
+        variant: "destructive",
+      });
     }
-  ];
+  };
 
-  // Sample user list
-  const users = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      email: "sarah@example.com",
-      type: "Provider",
-      status: "Active",
-      joinDate: "2024-01-15",
-      totalBookings: 127
-    },
-    {
-      id: 2,
-      name: "Mike Rodriguez",
-      email: "mike@example.com",
-      type: "Provider",
-      status: "Active",
-      joinDate: "2024-02-03",
-      totalBookings: 89
-    },
-    {
-      id: 3,
-      name: "Emily Chen",
-      email: "emily@example.com",
-      type: "Customer",
-      status: "Active",
-      joinDate: "2024-03-12",
-      totalBookings: 15
+  const handleReject = async (applicationId: string) => {
+    if (!rejectionReason.trim()) {
+      toast({
+        title: "Rejection Reason Required",
+        description: "Please provide a reason for rejecting this application.",
+        variant: "destructive",
+      });
+      return;
     }
-  ];
+
+    try {
+      await rejectApplication.mutateAsync({
+        applicationId,
+        reason: rejectionReason,
+      });
+      toast({
+        title: "Application Rejected",
+        description: "The provider application has been rejected.",
+      });
+      setRejectionReason("");
+      setSelectedApplication(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to reject the application. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const pendingApplications = applications.filter(app => app.status === 'pending');
+  const approvedApplications = applications.filter(app => app.status === 'approved');
+  const rejectedApplications = applications.filter(app => app.status === 'rejected');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -113,191 +113,225 @@ const AdminDashboard = () => {
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-teal-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">LS</span>
-              </div>
-              <span className="text-xl font-bold text-gray-800">LocalService Admin</span>
-            </div>
             <div className="flex items-center space-x-4">
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                Admin Panel
-              </Badge>
-              <Button variant="outline" size="sm">
-                Sign Out
-              </Button>
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-teal-600 rounded-lg flex items-center justify-center">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-800">LocalService Admin</h1>
+                <p className="text-sm text-gray-600">Welcome, {adminProfile?.full_name}</p>
+              </div>
             </div>
+            <Button onClick={handleSignOut} variant="outline" size="sm">
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
-          <p className="text-gray-600">Manage your LocalService marketplace</p>
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Applications</CardTitle>
+              <Clock className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-600">{pendingApplications.length}</div>
+              <p className="text-xs text-muted-foreground">Awaiting review</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Approved Providers</CardTitle>
+              <UserCheck className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{approvedApplications.length}</div>
+              <p className="text-xs text-muted-foreground">Active providers</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
+              <Users className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{applications.length}</div>
+              <p className="text-xs text-muted-foreground">All time</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Rejection Rate</CardTitle>
+              <TrendingUp className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {applications.length > 0 ? Math.round((rejectedApplications.length / applications.length) * 100) : 0}%
+              </div>
+              <p className="text-xs text-muted-foreground">Of all applications</p>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-8">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="providers">Provider Applications</TabsTrigger>
-            <TabsTrigger value="users">User Management</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="applications">Provider Applications</TabsTrigger>
+            <TabsTrigger value="approved">Approved Providers</TabsTrigger>
+            <TabsTrigger value="rejected">Rejected Applications</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview">
-            {/* Overview Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">1,234</div>
-                  <p className="text-xs text-muted-foreground">+12% from last month</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Providers</CardTitle>
-                  <UserCheck className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">156</div>
-                  <p className="text-xs text-muted-foreground">+8% from last month</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">$8,200</div>
-                  <p className="text-xs text-muted-foreground">+20% from last month</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
-                  <Star className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">4.8</div>
-                  <p className="text-xs text-muted-foreground">+0.2 from last month</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Bookings</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">House Cleaning - Sarah J.</p>
-                        <p className="text-sm text-gray-600">Customer: Mike R.</p>
-                      </div>
-                      <Badge className="bg-green-100 text-green-800">Completed</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Math Tutoring - Emily C.</p>
-                        <p className="text-sm text-gray-600">Customer: Lisa T.</p>
-                      </div>
-                      <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Handyman - Mike R.</p>
-                        <p className="text-sm text-gray-600">Customer: David K.</p>
-                      </div>
-                      <Badge className="bg-yellow-100 text-yellow-800">Scheduled</Badge>
-                    </div>
+          <TabsContent value="applications">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pending Provider Applications ({pendingApplications.length})</CardTitle>
+                <p className="text-sm text-gray-600">Review and approve new service providers</p>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin" />
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pending Applications</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {pendingProviders.slice(0, 3).map((provider) => (
-                      <div key={provider.id} className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">{provider.name}</p>
-                          <p className="text-sm text-gray-600">{provider.service}</p>
+                ) : pendingApplications.length === 0 ? (
+                  <div className="text-center py-8">
+                    <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">All Caught Up!</h3>
+                    <p className="text-gray-600">No pending applications to review.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {pendingApplications.map((application) => (
+                      <div key={application.id} className="border rounded-lg p-6 bg-white">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold">{application.business_name}</h3>
+                            <p className="text-gray-600 mb-2">{application.profiles.full_name}</p>
+                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              <span>{application.profiles.email}</span>
+                              {application.profiles.phone && <span>{application.profiles.phone}</span>}
+                              {application.profiles.location && <span>{application.profiles.location}</span>}
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-orange-600 border-orange-600">
+                            Pending Review
+                          </Badge>
                         </div>
-                        <div className="flex space-x-2">
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                            <CheckCircle className="w-4 h-4" />
+
+                        <div className="mb-4">
+                          <h4 className="font-medium mb-2">Business Description</h4>
+                          <p className="text-gray-700">{application.business_description}</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <h4 className="font-medium mb-1">Experience</h4>
+                            <p className="text-gray-700">{application.experience_years} years</p>
+                          </div>
+                          <div>
+                            <h4 className="font-medium mb-1">Certifications</h4>
+                            <div className="flex flex-wrap gap-1">
+                              {application.certifications.map((cert, index) => (
+                                <Badge key={index} variant="secondary">{cert}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex space-x-3">
+                          <Button
+                            onClick={() => handleApprove(application.id)}
+                            className="bg-green-600 hover:bg-green-700"
+                            disabled={approveApplication.isPending}
+                          >
+                            {approveApplication.isPending ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                            )}
+                            Approve
                           </Button>
-                          <Button size="sm" variant="destructive">
-                            <XCircle className="w-4 h-4" />
-                          </Button>
+
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="destructive"
+                                onClick={() => setSelectedApplication(application.id)}
+                              >
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Reject
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Reject Application</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <p className="text-gray-600">
+                                  Please provide a reason for rejecting {application.business_name}'s application:
+                                </p>
+                                <Textarea
+                                  value={rejectionReason}
+                                  onChange={(e) => setRejectionReason(e.target.value)}
+                                  placeholder="Enter rejection reason..."
+                                  rows={4}
+                                />
+                                <div className="flex justify-end space-x-2">
+                                  <Button 
+                                    variant="outline"
+                                    onClick={() => {
+                                      setRejectionReason("");
+                                      setSelectedApplication(null);
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={() => handleReject(application.id)}
+                                    disabled={rejectApplication.isPending}
+                                  >
+                                    {rejectApplication.isPending ? (
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                      "Reject Application"
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="providers">
+          <TabsContent value="approved">
             <Card>
               <CardHeader>
-                <CardTitle>Provider Applications</CardTitle>
-                <p className="text-sm text-gray-600">Review and approve new service providers</p>
+                <CardTitle>Approved Providers ({approvedApplications.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {pendingProviders.map((provider) => (
-                    <div key={provider.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="font-semibold text-lg">{provider.name}</h3>
-                          <p className="text-gray-600">{provider.service}</p>
-                        </div>
-                        <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-                          Pending Review
-                        </Badge>
+                  {approvedApplications.map((application) => (
+                    <div key={application.id} className="border rounded-lg p-4 flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold">{application.business_name}</h3>
+                        <p className="text-gray-600">{application.profiles.full_name}</p>
+                        <p className="text-sm text-gray-500">
+                          Approved on {new Date(application.reviewed_at!).toLocaleDateString()}
+                        </p>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                          <p className="text-sm text-gray-500">Email</p>
-                          <p className="font-medium">{provider.email}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Phone</p>
-                          <p className="font-medium">{provider.phone}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Experience</p>
-                          <p className="font-medium">{provider.experience}</p>
-                        </div>
-                      </div>
-                      <div className="flex space-x-4">
-                        <Button className="bg-green-600 hover:bg-green-700">
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Approve
-                        </Button>
-                        <Button variant="destructive">
-                          <XCircle className="w-4 h-4 mr-2" />
-                          Reject
-                        </Button>
-                        <Button variant="outline">
-                          <Eye className="w-4 h-4 mr-2" />
-                          View Details
-                        </Button>
-                      </div>
+                      <Badge className="bg-green-100 text-green-800">Approved</Badge>
                     </div>
                   ))}
                 </div>
@@ -305,112 +339,35 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="users">
+          <TabsContent value="rejected">
             <Card>
               <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <p className="text-sm text-gray-600">Manage customers and service providers</p>
+                <CardTitle>Rejected Applications ({rejectedApplications.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {users.map((user) => (
-                    <div key={user.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-teal-600 rounded-full flex items-center justify-center text-white font-semibold">
-                            {user.name.split(' ').map(n => n[0]).join('')}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold">{user.name}</h3>
-                            <p className="text-sm text-gray-600">{user.email}</p>
-                          </div>
+                  {rejectedApplications.map((application) => (
+                    <div key={application.id} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <h3 className="font-semibold">{application.business_name}</h3>
+                          <p className="text-gray-600">{application.profiles.full_name}</p>
                         </div>
-                        <div className="flex items-center space-x-4">
-                          <Badge variant={user.type === "Provider" ? "default" : "secondary"}>
-                            {user.type}
-                          </Badge>
-                          <Badge variant={user.status === "Active" ? "default" : "destructive"}>
-                            {user.status}
-                          </Badge>
-                          <div className="text-right">
-                            <p className="text-sm text-gray-500">Joined: {user.joinDate}</p>
-                            <p className="text-sm font-medium">{user.totalBookings} bookings</p>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button size="sm" variant="outline">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="destructive">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
+                        <Badge variant="destructive">Rejected</Badge>
                       </div>
+                      {application.rejection_reason && (
+                        <Alert>
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertDescription>
+                            <strong>Rejection Reason:</strong> {application.rejection_reason}
+                          </AlertDescription>
+                        </Alert>
+                      )}
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <div className="space-y-6">
-              {/* Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Monthly Growth</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={monthlyData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="users" stroke="#3b82f6" strokeWidth={2} />
-                        <Line type="monotone" dataKey="bookings" stroke="#10b981" strokeWidth={2} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Service Performance</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={serviceData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="service" />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="bookings" fill="#3b82f6" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Revenue Analytics */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Revenue Analytics</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={400}>
-                    <LineChart data={monthlyData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => [`$${value}`, 'Revenue']} />
-                      <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
           </TabsContent>
         </Tabs>
       </div>

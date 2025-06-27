@@ -9,6 +9,76 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_log_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_sessions: {
+        Row: {
+          admin_id: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          session_token: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          session_token: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          session_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_sessions_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string | null
@@ -113,6 +183,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          is_admin: boolean | null
           location: string | null
           phone: string | null
           updated_at: string | null
@@ -124,6 +195,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          is_admin?: boolean | null
           location?: string | null
           phone?: string | null
           updated_at?: string | null
@@ -135,12 +207,73 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          is_admin?: boolean | null
           location?: string | null
           phone?: string | null
           updated_at?: string | null
           user_type?: string | null
         }
         Relationships: []
+      }
+      provider_applications: {
+        Row: {
+          business_description: string | null
+          business_name: string | null
+          certifications: string[] | null
+          experience_years: number | null
+          id: string
+          portfolio_urls: string[] | null
+          provider_id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          submitted_at: string | null
+        }
+        Insert: {
+          business_description?: string | null
+          business_name?: string | null
+          certifications?: string[] | null
+          experience_years?: number | null
+          id?: string
+          portfolio_urls?: string[] | null
+          provider_id: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          submitted_at?: string | null
+        }
+        Update: {
+          business_description?: string | null
+          business_name?: string | null
+          certifications?: string[] | null
+          experience_years?: number | null
+          id?: string
+          portfolio_urls?: string[] | null
+          provider_id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_applications_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -290,6 +423,9 @@ export type Database = {
           location: string | null
           price_per_hour: number | null
           provider_id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string | null
           title: string
           updated_at: string | null
@@ -302,6 +438,9 @@ export type Database = {
           location?: string | null
           price_per_hour?: number | null
           provider_id: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string | null
           title: string
           updated_at?: string | null
@@ -314,6 +453,9 @@ export type Database = {
           location?: string | null
           price_per_hour?: number | null
           provider_id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string | null
           title?: string
           updated_at?: string | null
@@ -333,6 +475,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "services_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -340,7 +489,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      log_admin_action: {
+        Args: {
+          p_admin_id: string
+          p_action: string
+          p_target_type: string
+          p_target_id: string
+          p_details?: Json
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
